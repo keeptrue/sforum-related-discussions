@@ -1,10 +1,13 @@
 # SForum 相关讨论（`sforum.related-topics`）
 
+[![ci](https://github.com/keeptrue/sforum-related-discussions/actions/workflows/ci.yml/badge.svg)](https://github.com/keeptrue/sforum-related-discussions/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/keeptrue/sforum-related-discussions)](https://github.com/keeptrue/sforum-related-discussions/releases)
+
 在帖子详情页正文下方、评论区之前，列出与该帖内容相关的其他帖子。读者读完正文正好看到「这个话题还聊过什么」，把被埋没的旧帖重新带回流量。
 
 外部扩展包，不属于 SForum 内置插件。
 
-- 仓库：`~/Code/github/sforum-related-discussions`（仓库根即 SForum 的外部扩展源根）
+- 仓库：`https://github.com/keeptrue/sforum-related-discussions`（仓库根即 SForum 的外部扩展源根）
 - 框架检出：`~/Code/github/SForum`（**同级目录**，插件通过本地 `replace` 解析宿主 SDK）
 - 扩展 id：`sforum.related-topics`
 
@@ -56,7 +59,21 @@
 
 ## 安装
 
-开发（宿主 dev watcher 零命令）：
+### 用发布包（站点）
+
+1. 从 [Releases](https://github.com/keeptrue/sforum-related-discussions/releases) 下载与服务器平台匹配的压缩包
+   （`linux_amd64` / `linux_arm64` / `darwin_arm64` / `darwin_amd64`），校验 `sha256sum -c SHA256SUMS`。
+2. 装到 SForum（两种方式任选）：
+   - **上传**：后台「插件管理 → 安装插件」选择 zip；
+   - **外部源**：解压到某个外部源根的 `plugins/sforum.related-topics/`，然后重启 API。
+3. 后台启用 **相关讨论**，按宿主提示完成一次 exact-artifact `super_admin` 信任确认
+   （`授权当前精确制品` → `确认并启用`）。
+
+每个压缩包内的清单摘要与其中可执行文件一一对应，**跨平台包不可混用**。包内容变化会生成
+新的候选制品、需要重新确认信任；**版本号不变只改内容时**用「禁用 → 升级 → 启用」切换
+（`重启` 不会切换制品）。
+
+### 开发（宿主 dev watcher 零命令）
 
 ```bash
 # 1. 宿主 .env 的 EXTERNAL_EXTENSION_ROOTS 加上本仓库根，重启 API
@@ -70,6 +87,22 @@ scripts/prepare-package.sh
 ```
 
 它会依次执行 `go build`（`CGO_ENABLED=0 -trimpath -buildvcs=false`，与宿主 dev 构建同参）→ `extension digest --write` → `extension validate` → `extension test`。
+
+## 发布
+
+推 `v*` 标签即触发 `.github/workflows/release.yml`：
+
+```bash
+# 1. 改 plugins/sforum.related-topics/sforum.extension.json 的 version 与 CHANGELOG.md
+git tag v1.0.2 && git push origin v1.0.2
+```
+
+流水线先跑 `verify`（`go vet` + 单测 + 标签版本一致性 + 宿主 `extension digest/validate/test`），
+再按四个平台并行 `build`，最后 `publish` 把 zip、SBOM、`SHA256SUMS` 挂到 Release，并把
+`CHANGELOG.md` 里对应版本的小节贴进 Release 说明。
+
+摘要必须按平台分别写入：四个平台的二进制不同，**同一个 zip 不能跨平台复用**。`workflow_dispatch`
+可以只跑校验与构建、不创建 Release。
 
 ## 目录布局
 

@@ -2,6 +2,7 @@ name: ci
 
 # 每次推送到 main / PR 都跑：后端单测 + 宿主契约校验。
 # 宿主的 apps/api 尚未发布为 Go module，所以这里检出 SForum 源码并覆盖 go.mod 的 replace。
+# 仓库根就是「外部扩展源根」，扩展包位于 plugins/sforum.related-topics。
 
 on:
   push:
@@ -45,28 +46,51 @@ jobs:
         with:
           # 以宿主 go.mod 为准：插件是 replace 进宿主模块构建的。
           go-version-file: sforum/apps/api/go.mod
+          cache-dependency-path: |
+            sforum/apps/api/go.sum
+            plugin/${{ env.PACKAGE_DIR }}/backend/go.sum
 
       - name: Point replace at this checkout
         working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
-        run: go mod edit -replace github.com/keeptrue/sforum/apps/api=../../../sforum/apps/api
+        run: |
+          set -euo pipefail
+          # 必须用绝对路径：checkout 出来的 plugin 与 sforum 是两个同级目录，
+          # 相对路径要往上四层才回到 $GITHUB_WORKSPACE，写错会在 CI 里静默指向不存在的目录。
+          test -f "$GITHUB_WORKSPACE/sforum/apps/api/go.mod" || {
+            echo "::error title=宿主检出缺失::找不到 $GITHUB_WORKSPACE/sforum/apps/api/go.mod"
+            exit 1
+          }
+          go mod edit -replace "github.com/keeptrue/sforum/apps/api=$GITHUB_WORKSPACE/sforum/apps/api"
 
-      - name: Backend unit tests
+      - name: Backend vet and unit tests
         working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
-        run: go test ./...
+        run: |
+          go vet ./...
+          go test ./...
 
       - name: Build backend binary
         working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
         run: |
-          CGO_ENABLED=0 go build -trimpath -buildvcs=false -o ../backend/plugin ./
+          # 与宿主 dev watcher（ExtensionPackage.BuildBackend）同参：
+          # CGO_ENABLED=0 + -trimpath + -buildvcs=false，否则同一份源码产出的摘要不收敛。
+          CGO_ENABLED=0 go build -trimpath -buildvcs=false -o plugin ./
 
       - name: Refresh digests
         working-directory: sforum/apps/api
-        run: go run ./cmd/sforum extension digest --write ../../plugin/${{ env.PACKAGE_DIR }}
+        run: go run ./cmd/sforum extension digest --write "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
+
+      - name: Report stale committed digests (non-blocking)
+        working-directory: plugin
+        run: |
+          if ! git diff --quiet -- "$PACKAGE_DIR/sforum.extension.json"; then
+            echo "::notice title=包摘要有变化::本机构建的可执行文件摘要与仓库中的不一致（工具链差异常见）。发布流水线会按平台重新写入摘要，无需手工提交。"
+            git --no-pager diff --stat -- "$PACKAGE_DIR/sforum.extension.json"
+          fi
 
       - name: Validate manifest
         working-directory: sforum/apps/api
-        run: go run ./cmd/sforum extension validate ../../plugin/${{ env.PACKAGE_DIR }}
+        run: go run ./cmd/sforum extension validate "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
 
       - name: Host contract test
         working-directory: sforum/apps/api
-        run: go run ./cmd/sforum extension test ../../plugin/${{ env.PACKAGE_DIR }}
+        run: go run ./cmd/sforum extension test "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"

@@ -112,3 +112,18 @@ WHERE t.id = ANY($1::bigint[])
 
 `icon_color` 可能是空串（`general` 这类没设色的分类），所以组件只接受
 `^#[0-9a-f]{6}$`，其它形状回落到中性描边——不把未校验的字符串拼进内联样式。
+
+## 发布包为什么按平台各写一次摘要
+
+`backend/plugin` 的摘要在清单里是**唯一值**，而四个平台的二进制字节不同。所以流水线
+不能「构建一次、复制四份」：每个平台必须在自己的 stage 目录里重新
+`extension digest --write` 再 `extension package`。这样每个 zip 内的清单摘要与其中的
+可执行文件一一对应，宿主 exact-artifact 信任确认才能过。
+
+同一份源码要产出同一份字节，构建参数必须与宿主 dev watcher（`ExtensionPackage.BuildBackend`）
+完全一致：`CGO_ENABLED=0` + `-trimpath` + `-buildvcs=false`。发布包额外加 `-ldflags "-s -w"`
+只影响体积，不影响跨平台摘要各自独立这件事。
+
+stage 目录用 `rsync --exclude '/backend/*.go' --exclude '/backend/go.mod' --exclude '/backend/go.sum'`
+先摘掉作者源码，再交给 `--exclude-source` 打包；两层都做，是因为前者保证摘要计算时不把
+`go.mod` 当运行时文件，后者保证清单之外的杂项（`.gitignore`、`testdata/`）也进不去。
