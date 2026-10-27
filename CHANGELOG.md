@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.3
+
+插件运行时行为与 1.0.2 一致；本版补品牌身份与发布工程。
+
+- 新增品牌资产 `brand/icon.svg`、`brand/icon.png`（512×512）、
+  `brand/social-preview.png`（1280×640），由宿主 `scripts/brand/generate.mjs`
+  按统一模板生成（Tabler `topology-star-3`：一个话题连到多个相关帖）。
+  `brand/` 不进 `packageFiles`，但随包树摘要变化，所以每个发布包都带它。
+- `extension brand check` 并入 `scripts/prepare-package.sh`、`ci.yml`、`release.yml`：
+  SVG 的 `viewBox` 与自包含性、PNG 尺寸与字节预算从此是门禁，不是约定。
+- 包 README 换成正式说明并挂社交卡；根 README 在徽章下挂卡。
+- CI 改为把宿主检出到 `../SForum`、按 `backend/go.mod` 已提交的 `replace`
+  自然解析，不再 `go mod edit -replace` 改写。Go 会把 replace 的字面字符串写进
+  二进制，改写成绝对路径会让同一份源码的字节与本地不同。
+
 ## 1.0.2
 
 发布工程版本，插件运行时行为与 1.0.1 一致。

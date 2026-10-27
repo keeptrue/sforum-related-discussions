@@ -127,3 +127,21 @@ WHERE t.id = ANY($1::bigint[])
 stage 目录用 `rsync --exclude '/backend/*.go' --exclude '/backend/go.mod' --exclude '/backend/go.sum'`
 先摘掉作者源码，再交给 `--exclude-source` 打包；两层都做，是因为前者保证摘要计算时不把
 `go.mod` 当运行时文件，后者保证清单之外的杂项（`.gitignore`、`testdata/`）也进不去。
+
+## 为什么 CI 不改写 go.mod 的 replace
+
+`go version -m <binary>` 会把 `replace` 的**字面字符串**打进二进制：
+
+```text
+dep  github.com/keeptrue/sforum/apps/api  v0.0.0
+=>   ../../../../SForum/apps/api  (devel)
+```
+
+所以 `go mod edit -replace ...=$GITHUB_WORKSPACE/sforum/apps/api` 这种改写会改变
+同一份源码的字节——摘要、乃至任何按字节比对的东西都会漂。CI 现在的做法是把宿主
+检出到 `../SForum`（目录名与提交的 replace 逐字一致，大小写敏感），完全不碰 go.mod，
+再加一步断言 replace 仍指向那个目录，布局写错就直接红。
+
+同理，清单里那个摘要**不是跨环境不变量**：本地宿主 dev watcher 用自己的 go 重建并
+回写，CI 的 setup-go 是另一版工具链。要求两者相等只会制造常红提示。真正需要精确的
+是发布流水线——每个平台在自己的 stage 目录里重新 `digest --write` 再打包。
