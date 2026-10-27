@@ -59,3 +59,37 @@
 - 正文加权（把 `plain_text` 摘要放进索引，需要自建 tsvector 与 bigram 分词）。
 - 标签重叠（`forum_topics` 视图没有 `tag_slugs`；事件 payload 有，但回填拿不到）。
 - 宿主侧给区域 widget 传页面上下文，去掉 URL 解析兜底。
+
+## 运行时踩到的两个真坑（已修，值得记住）
+
+### 1. `pg_trgm` 函数必须带 schema 限定
+
+插件运行时租约的 `search_path` 只有自己的 schema + `sforum_core_v1` + `pg_catalog`，
+**不含** `sforum_host_extensions`。所以：
+
+- `CREATE INDEX ... (lower(title) sforum_host_extensions.gin_trgm_ops)` —— 限定过，能建；
+- `similarity(lower(title), lower($1))` —— 未限定，运行时 `function similarity(text, text) does not exist`。
+
+`extension test` 与 `validate` 都不会发现这个问题：它们不连库。表现是路由稳定 503
+（宿主把插件返回的 `ErrorDetail` 折叠成 `extension.runtime_failed`，原始原因不下发）。
+修法是显式写 `sforum_host_extensions.similarity(...)`。
+
+### 2. 扩展路由的裸 JSON 会被解成字符串
+
+`useApiClient().request` 默认返回 `payload.data`（API 信封）。扩展路由返回的是裸
+JSON，必须传 `responseMode: 'body'`。即使传了，宿主仍可能按 `text/plain` 返回，
+于是 `$fetch` 不解码、`bridge.request` 解析出的是**字符串**。
+
+组件因此必须接受两种形状：`typeof raw === 'string' ? JSON.parse(raw) : raw`。
+只写 `payload?.items` 会得到 `undefined`，表现为「请求 200、组件空白」。
+
+### 3. 区域 widget 的挂载/卸载抖动
+
+宿主在区域数据到达、租约复核、可见性变化时会把组件 `dispose` 再挂载。若清理函数
+主动摘掉已渲染的节点，晚到的响应就会「渲染了又被抹掉」。现在的做法是：清理只释放
+样式，内容留在 target 里（target 被移除时自然消失），并用
+`target.querySelector('[data-related-discussions]')` 防重复插入。
+
+另外：**每次改动 `frontend/related.mjs` 都必须 bump
+`components[].contractVersion`**，否则升级会被拒（`component registry contract
+conflicts with the active snapshot`）。当前是 `@11`。

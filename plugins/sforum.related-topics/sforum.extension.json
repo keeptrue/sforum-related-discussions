@@ -31,7 +31,7 @@
   "components": [
     {
       "action": "add",
-      "contractVersion": "sforum.related-topics.component.related@1",
+      "contractVersion": "sforum.related-topics.component.related@11",
       "id": "sforum.related-topics.component.related",
       "l2Component": "sforum.related-topics.file.frontend.related",
       "propsSchema": "sforum.related-topics.component.related.props@1"
@@ -191,7 +191,7 @@
       "path": "backend/plugin"
     },
     {
-      "digest": "f4d6b090cfa54bcee5eb8dde5092d03a674302457ae293170ac3ef22bb7861d6",
+      "digest": "505e0b689ee67574d895a5c5c5c911c882e055603984e0d4dc07078d82a9a5f1",
       "id": "sforum.related-topics.file.frontend.related",
       "kind": "frontend",
       "path": "frontend/related.mjs",

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1
+
+- 扩展 id 改为 `sforum.related-topics`（原 `sforum.related-discussions`）。
+- 补 lifecycle V2 幂等 no-op 步骤：没有它，宿主 dev watcher 无法把新摘要升级到
+  已启用的插件。
+- 启动时后台回填索引一次；回填完成后清空候选缓存。
+- 修复 `pg_trgm` 函数未做 schema 限定导致的运行时 503。
+- 组件接受字符串形态的裸 JSON 响应；清理函数不再摘除已渲染节点。
+- 路由增加 panic 恢复与有界错误日志。
+
 ## 1.0.0
 
 首个版本。

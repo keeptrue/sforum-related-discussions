@@ -118,21 +118,24 @@ export function mount(target, bridge) {
     return () => {}
   }
 
-  let disposed = false
   let section = null
   ensureStyle(doc)
 
+  // 只释放样式，不摘掉已渲染的节点：内容挂在 target 里，target 被宿主移除时
+  // 会一起消失。宿主在区域数据到达/租约复核时会把组件 dispose 再挂载，若这里
+  // 主动 remove，晚到的响应就会「渲染了又被抹掉」。
   const cleanup = () => {
-    disposed = true
-    if (section) section.remove()
-    section = null
     releaseStyle(doc)
   }
 
   bridge
-    .request(`/related?topicId=${topicId}`, { timeout: 8000 })
-    .then(payload => {
-      if (disposed) return
+    .request(`/related?topicId=${topicId}`, { timeout: 8000, responseMode: 'body' })
+    .then(raw => {
+      // 扩展路由是裸 JSON；宿主可能按 text/plain 返回，于是 $fetch 不解码。
+      // 两种形状都接受，避免「有数据但组件读不到」。
+      const payload = typeof raw === 'string' ? safeParseJSON(raw) : raw
+      // 已渲染过就不再重复插入（宿主可能重复挂载同一个 target）。
+      if (target.querySelector('[data-related-discussions]')) return
       const items = Array.isArray(payload?.items) ? payload.items : []
       // 没有相关帖子就整块不插入 DOM：不隐藏、不留占位，页面布局零影响。
       if (items.length === 0) return
@@ -144,6 +147,14 @@ export function mount(target, bridge) {
     })
 
   return cleanup
+}
+
+function safeParseJSON(value) {
+  try {
+    return JSON.parse(value)
+  } catch {
+    return null
+  }
 }
 
 function render(doc, bridge, items) {
