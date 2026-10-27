@@ -1,7 +1,8 @@
 name: ci
 
 # 每次推送到 main / PR 都跑：后端单测 + 宿主契约校验。
-# 宿主的 apps/api 尚未发布为 Go module，所以这里检出 SForum 源码并覆盖 go.mod 的 replace。
+# 宿主的 apps/api 尚未发布为 Go module，所以这里检出 SForum 源码，让 go.mod 里
+# 已提交的 replace 自然解析——不重写 go.mod，理由见「Checkout SForum」那一步。
 # 仓库根就是「外部扩展源根」，扩展包位于 plugins/sforum.related-topics。
 
 on:
@@ -23,6 +24,9 @@ env:
   # 公开 L2 组件 / forum.page.regions l2Widget）都已合入宿主 main。
   SFORUM_REF: main
   PACKAGE_DIR: plugins/sforum.related-topics
+  # 必须与 backend/go.mod 里 replace 指向的目录名逐字一致（大小写敏感）。
+  # 换掉这一步，构建出的二进制字节就会变，清单摘要永远对不上。
+  SFORUM_DIR: SForum
 
 jobs:
   verify:
@@ -39,28 +43,40 @@ jobs:
         with:
           repository: ${{ env.SFORUM_REPOSITORY }}
           ref: ${{ env.SFORUM_REF }}
-          path: sforum
+          # 放在 `plugin` 的同级、且目录名与 replace 完全一致：
+          # backend/go.mod 里写的是 `../../../../SForum/apps/api`，从
+          # plugin/plugins/sforum.related-topics/backend 往上四层正好是 $GITHUB_WORKSPACE。
+          #
+          # 不要用 `go mod edit -replace` 改写成绝对路径：Go 会把 replace 的**字面字符串**
+          # 写进二进制（`go version -m` 可见），路径一换字节就换，摘要不可能收敛。
+          path: ${{ env.SFORUM_DIR }}
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           # 以宿主 go.mod 为准：插件是 replace 进宿主模块构建的。
-          go-version-file: sforum/apps/api/go.mod
+          # 工具链版本同样是构建身份的一部分，本地也要用同一版（见 scripts/prepare-package.sh）。
+          go-version-file: ${{ env.SFORUM_DIR }}/apps/api/go.mod
           cache-dependency-path: |
-            sforum/apps/api/go.sum
+            ${{ env.SFORUM_DIR }}/apps/api/go.sum
             plugin/${{ env.PACKAGE_DIR }}/backend/go.sum
 
-      - name: Point replace at this checkout
+      - name: Check replace resolves
         working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
         run: |
           set -euo pipefail
-          # 必须用绝对路径：checkout 出来的 plugin 与 sforum 是两个同级目录，
-          # 相对路径要往上四层才回到 $GITHUB_WORKSPACE，写错会在 CI 里静默指向不存在的目录。
-          test -f "$GITHUB_WORKSPACE/sforum/apps/api/go.mod" || {
-            echo "::error title=宿主检出缺失::找不到 $GITHUB_WORKSPACE/sforum/apps/api/go.mod"
+          target="$GITHUB_WORKSPACE/$SFORUM_DIR/apps/api"
+          test -f "$target/go.mod" || {
+            echo "::error title=宿主检出缺失::找不到 $target/go.mod（目录名要与 go.mod 的 replace 逐字一致）"
             exit 1
           }
-          go mod edit -replace "github.com/keeptrue/sforum/apps/api=$GITHUB_WORKSPACE/sforum/apps/api"
+          go mod edit -json | python3 -c '
+          import json, sys
+          replaces = {r["Old"]["Path"]: r["New"]["Path"] for r in json.load(sys.stdin).get("Replace") or []}
+          got = replaces.get("github.com/keeptrue/sforum/apps/api")
+          print("replace:", got)
+          sys.exit(0 if got == "../../../../SForum/apps/api" else 1)
+          '
 
       - name: Backend vet and unit tests
         working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
@@ -76,48 +92,22 @@ jobs:
           CGO_ENABLED=0 go build -trimpath -buildvcs=false -o plugin ./
 
       - name: Refresh digests
-        working-directory: sforum/apps/api
+        working-directory: ${{ env.SFORUM_DIR }}/apps/api
         run: go run ./cmd/sforum extension digest --write "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
 
-      - name: Report stale committed digests (non-blocking)
-        working-directory: plugin
-        run: |
-          set -euo pipefail
-          # 只比摘要，不比字节：digest --write 会用 Go 的 encoding/json 重排清单
-          # （例如把 ">=" 写成 "\u003e="），直接 git diff 会把纯格式差异误报成摘要漂移。
-          python3 - "$PACKAGE_DIR/sforum.extension.json" <<'PY'
-          import json, subprocess, sys
-
-          path = sys.argv[1]
-          old = json.loads(subprocess.check_output(["git", "show", f"HEAD:{path}"], text=True))
-          new = json.load(open(path))
-
-          def digests(m):
-              out = {"backend": (m.get("backend") or {}).get("digest")}
-              for f in m.get("packageFiles") or []:
-                  out[f["id"]] = f.get("digest")
-              for o in m.get("openapi") or []:
-                  out[o["id"]] = o.get("digest")
-              return out
-
-          a, b = digests(old), digests(new)
-          drift = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
-          if drift:
-              print("::notice title=包摘要有变化::本机构建的可执行文件摘要与仓库中的不一致（工具链差异常见）。发布流水线会按平台重新写入摘要，无需手工提交。")
-              for k in drift:
-                  print(f"  {k}: {str(a.get(k))[:16]} -> {str(b.get(k))[:16]}")
-          else:
-              print("digests match committed manifest")
-          PY
-
+      # 曾经在这里比对「CI 构建出的摘要 vs 清单里的摘要」。删掉的原因：
+      # 摘要不是跨环境不变量——本地宿主 dev watcher 用自己进程里的 go 构建并回写清单，
+      # CI 的 setup-go 是另一版工具链，两者字节必然不同；这条提示会每次常红，
+      # 训练大家忽略 annotation。摘要真正需要精确的地方是发布流水线：
+      # 每个平台在自己的 stage 目录里重新 `digest --write` 再打包。
       - name: Validate manifest
-        working-directory: sforum/apps/api
+        working-directory: ${{ env.SFORUM_DIR }}/apps/api
         run: go run ./cmd/sforum extension validate "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
 
       - name: Brand asset check
-        working-directory: sforum/apps/api
+        working-directory: ${{ env.SFORUM_DIR }}/apps/api
         run: go run ./cmd/sforum extension brand check "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
 
       - name: Host contract test
-        working-directory: sforum/apps/api
+        working-directory: ${{ env.SFORUM_DIR }}/apps/api
         run: go run ./cmd/sforum extension test "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"

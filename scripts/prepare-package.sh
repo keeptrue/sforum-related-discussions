@@ -16,6 +16,11 @@ fi
 # 与宿主 dev watcher（ExtensionPackage.BuildBackend）和 CI 同一组参数：
 # CGO_ENABLED=0 + -buildvcs=false。否则同一份源码在「本地 prepare」与
 # 「站点自动构建」两条路上会产出不同字节，摘要来回拉扯、永不收敛。
+#
+# 注意：工具链版本同样是构建身份的一部分，但这里**不**钉 GOTOOLCHAIN——
+# 宿主 dev watcher 盯着本仓库，会用自己进程里的 go 重新构建并回写清单摘要，
+# 钉一个与它不同的版本只会让摘要每几秒被改回去。摘要不是跨环境不变量，
+# 真正需要精确的地方是发布流水线（每个平台各自重写）。
 echo "==> 构建 backend/plugin（CGO_ENABLED=0）"
 rm -f "$PKG/backend/plugin"
 (cd "$PKG/backend" && CGO_ENABLED=0 go build -trimpath -buildvcs=false -o "$PKG/backend/plugin" ./)
