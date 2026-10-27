@@ -50,7 +50,7 @@
         "pages": [
           "forum.topic.show"
         ],
-        "region": "detail_after",
+        "region": "comments_after",
         "type": "l2Widget"
       },
       "point": "forum.page.regions"
