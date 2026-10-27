@@ -82,10 +82,33 @@ jobs:
       - name: Report stale committed digests (non-blocking)
         working-directory: plugin
         run: |
-          if ! git diff --quiet -- "$PACKAGE_DIR/sforum.extension.json"; then
-            echo "::notice title=包摘要有变化::本机构建的可执行文件摘要与仓库中的不一致（工具链差异常见）。发布流水线会按平台重新写入摘要，无需手工提交。"
-            git --no-pager diff --stat -- "$PACKAGE_DIR/sforum.extension.json"
-          fi
+          set -euo pipefail
+          # 只比摘要，不比字节：digest --write 会用 Go 的 encoding/json 重排清单
+          # （例如把 ">=" 写成 "\u003e="），直接 git diff 会把纯格式差异误报成摘要漂移。
+          python3 - "$PACKAGE_DIR/sforum.extension.json" <<'PY'
+          import json, subprocess, sys
+
+          path = sys.argv[1]
+          old = json.loads(subprocess.check_output(["git", "show", f"HEAD:{path}"], text=True))
+          new = json.load(open(path))
+
+          def digests(m):
+              out = {"backend": (m.get("backend") or {}).get("digest")}
+              for f in m.get("packageFiles") or []:
+                  out[f["id"]] = f.get("digest")
+              for o in m.get("openapi") or []:
+                  out[o["id"]] = o.get("digest")
+              return out
+
+          a, b = digests(old), digests(new)
+          drift = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+          if drift:
+              print("::notice title=包摘要有变化::本机构建的可执行文件摘要与仓库中的不一致（工具链差异常见）。发布流水线会按平台重新写入摘要，无需手工提交。")
+              for k in drift:
+                  print(f"  {k}: {str(a.get(k))[:16]} -> {str(b.get(k))[:16]}")
+          else:
+              print("digests match committed manifest")
+          PY
 
       - name: Validate manifest
         working-directory: sforum/apps/api
