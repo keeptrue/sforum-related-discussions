@@ -1,0 +1,72 @@
+name: ci
+
+# 每次推送到 main / PR 都跑：后端单测 + 宿主契约校验。
+# 宿主的 apps/api 尚未发布为 Go module，所以这里检出 SForum 源码并覆盖 go.mod 的 replace。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SFORUM_REPOSITORY: keeptrue/SForum
+  # 本插件用到的宿主面（hooks / jobs / schedules / routes / own_schema + core_views /
+  # 公开 L2 组件 / forum.page.regions l2Widget）都已合入宿主 main。
+  SFORUM_REF: main
+  PACKAGE_DIR: plugins/sforum.related-discussions
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout plugin repo
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Checkout SForum framework
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SFORUM_REPOSITORY }}
+          ref: ${{ env.SFORUM_REF }}
+          path: sforum
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          # 以宿主 go.mod 为准：插件是 replace 进宿主模块构建的。
+          go-version-file: sforum/apps/api/go.mod
+
+      - name: Point replace at this checkout
+        working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
+        run: go mod edit -replace github.com/keeptrue/sforum/apps/api=../../../sforum/apps/api
+
+      - name: Backend unit tests
+        working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
+        run: go test ./...
+
+      - name: Build backend binary
+        working-directory: plugin/${{ env.PACKAGE_DIR }}/backend
+        run: |
+          CGO_ENABLED=0 go build -trimpath -buildvcs=false -o ../backend/plugin ./
+
+      - name: Refresh digests
+        working-directory: sforum/apps/api
+        run: go run ./cmd/sforum extension digest --write ../../plugin/${{ env.PACKAGE_DIR }}
+
+      - name: Validate manifest
+        working-directory: sforum/apps/api
+        run: go run ./cmd/sforum extension validate ../../plugin/${{ env.PACKAGE_DIR }}
+
+      - name: Host contract test
+        working-directory: sforum/apps/api
+        run: go run ./cmd/sforum extension test ../../plugin/${{ env.PACKAGE_DIR }}

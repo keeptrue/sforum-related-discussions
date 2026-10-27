@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: SForum Related Discussions
+  version: 1.0.0
+paths:
+  /related:
+    get:
+      operationId: sforum.related-discussions.list
+      x-sforum-route-id: sforum.related-discussions.route.related
+      x-sforum-contract-version: sforum.related-discussions.route.related@1
+      x-sforum-guard: core.guard.public
+      x-sforum-response-schema: sforum.related-discussions.route.related.response@1
+      summary: List related discussions for one topic
+      parameters:
+        - name: topicId
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Related topic list, most relevant first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sforum.related-discussions.route.related.response@1"
+        "422":
+          description: topicId missing or not a positive integer
+        "503":
+          description: Index or Core view temporarily unavailable
+components:
+  schemas:
+    "sforum.related-discussions.route.related.response@1":
+      type: object
+      required:
+        - items
+        - cached
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          maxItems: 8
+          items:
+            type: object
+            required:
+              - topicId
+              - title
+              - slug
+              - categorySlug
+              - commentCount
+              - lastActivityAt
+            additionalProperties: false
+            properties:
+              topicId:
+                type: integer
+              title:
+                type: string
+              slug:
+                type: string
+              categorySlug:
+                type: string
+              commentCount:
+                type: integer
+              lastActivityAt:
+                type: string
+                format: date-time
+        cached:
+          type: boolean

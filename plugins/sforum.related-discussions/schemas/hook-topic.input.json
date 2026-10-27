@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "topic.created / topic.updated snapshot",
+  "type": "object",
+  "required": ["topicId", "title"],
+  "properties": {
+    "topicId": { "type": "integer", "minimum": 1 },
+    "title": { "type": "string" },
+    "categorySlug": { "type": "string" },
+    "path": { "type": "string" },
+    "url": { "type": "string" },
+    "topic": { "type": "object" },
+    "category": { "type": "object" }
+  }
+}

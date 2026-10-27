@@ -1,0 +1,370 @@
+{
+  "admin": {
+    "entry": "/settings",
+    "pages": [
+      {
+        "description": "调整相关性阈值、条数与索引重建。",
+        "icon": "i-lucide-network",
+        "label": "相关讨论",
+        "menu": true,
+        "order": 60,
+        "path": "/settings",
+        "view": "settings"
+      }
+    ]
+  },
+  "author": {
+    "name": "SForum",
+    "url": "https://github.com/keeptrue/sforum"
+  },
+  "backend": {
+    "digest": "44ee0b276d5cfddaeaf2992e7360ba81a7df03194e9bdcdbf6f1ea3c2ba0bd59",
+    "entry": "backend/plugin",
+    "hostApiVersion": "sforum.host@2",
+    "protocolVersion": 2,
+    "rpc": "hashicorp-go-plugin"
+  },
+  "capabilities": [
+    "host.api",
+    "jobs.enqueue"
+  ],
+  "components": [
+    {
+      "action": "add",
+      "contractVersion": "sforum.related-discussions.component.related@1",
+      "id": "sforum.related-discussions.component.related",
+      "l2Component": "sforum.related-discussions.file.frontend.related",
+      "propsSchema": "sforum.related-discussions.component.related.props@1"
+    }
+  ],
+  "contributions": [
+    {
+      "id": "sforum.related-discussions.region.topic",
+      "label": {
+        "en-US": "Related discussions",
+        "zh-CN": "相关讨论"
+      },
+      "order": 10,
+      "payload": {
+        "componentId": "sforum.related-discussions.component.related",
+        "pages": [
+          "forum.topic.show"
+        ],
+        "region": "detail_after",
+        "type": "l2Widget"
+      },
+      "point": "forum.page.regions"
+    }
+  ],
+  "database": {
+    "backup": {
+      "required": true,
+      "strategy": "pg_dump"
+    },
+    "contractVersion": "sforum.related-discussions.database@1",
+    "grants": [
+      "own_schema",
+      "core_views"
+    ],
+    "retention": {
+      "days": 30,
+      "onDisable": "retain",
+      "onUninstall": "export"
+    },
+    "role": "sforum_related_discussions",
+    "schema": "sforum_related_discussions"
+  },
+  "description": "帖子页正文下方的相关讨论：把被埋没的旧帖重新带回流量。",
+  "hooks": [
+    {
+      "contractVersion": "sforum.related-discussions.hook.topic-created@1",
+      "execution": "async",
+      "failurePolicy": "fail_open",
+      "handler": "sforum.related-discussions.hook.topic-created",
+      "id": "sforum.related-discussions.hook.topic-created",
+      "inputSchema": "sforum.related-discussions.hook.topic.input@1",
+      "kind": "observe",
+      "name": "topic.created",
+      "timeoutMs": 5000
+    },
+    {
+      "contractVersion": "sforum.related-discussions.hook.topic-updated@1",
+      "execution": "async",
+      "failurePolicy": "fail_open",
+      "handler": "sforum.related-discussions.hook.topic-updated",
+      "id": "sforum.related-discussions.hook.topic-updated",
+      "inputSchema": "sforum.related-discussions.hook.topic.input@1",
+      "kind": "observe",
+      "name": "topic.updated",
+      "timeoutMs": 5000
+    },
+    {
+      "contractVersion": "sforum.related-discussions.hook.topic-deleted@1",
+      "execution": "async",
+      "failurePolicy": "fail_open",
+      "handler": "sforum.related-discussions.hook.topic-deleted",
+      "id": "sforum.related-discussions.hook.topic-deleted",
+      "inputSchema": "sforum.related-discussions.hook.topic-deleted.input@1",
+      "kind": "observe",
+      "name": "topic.deleted",
+      "timeoutMs": 5000
+    }
+  ],
+  "id": "sforum.related-discussions",
+  "jobs": [
+    {
+      "concurrencyLimit": 1,
+      "contractVersion": "sforum.related-discussions.job.backfill@1",
+      "handler": "sforum.related-discussions.job.backfill",
+      "id": "sforum.related-discussions.job.backfill",
+      "maxAttempts": 3,
+      "name": "sforum.related-discussions.backfill",
+      "payloadSchema": "sforum.related-discussions.job.payload@1",
+      "retryPolicy": "exponential"
+    },
+    {
+      "concurrencyLimit": 1,
+      "contractVersion": "sforum.related-discussions.job.reconcile@1",
+      "handler": "sforum.related-discussions.job.reconcile",
+      "id": "sforum.related-discussions.job.reconcile",
+      "maxAttempts": 3,
+      "name": "sforum.related-discussions.reconcile",
+      "payloadSchema": "sforum.related-discussions.job.payload@1",
+      "retryPolicy": "exponential"
+    }
+  ],
+  "manifestVersion": 3,
+  "name": "SForum Related Discussions",
+  "openapi": [
+    {
+      "contractVersion": "sforum.related-discussions.openapi.routes@1",
+      "digest": "da3fb70c0831411c6d0df5be464fb51b03420674696ef73d3e01eea3a3c871f9",
+      "id": "sforum.related-discussions.openapi.routes",
+      "namespace": "sforum.related-discussions",
+      "path": "openapi/routes.yaml"
+    }
+  ],
+  "packageFiles": [
+    {
+      "digest": "44ee0b276d5cfddaeaf2992e7360ba81a7df03194e9bdcdbf6f1ea3c2ba0bd59",
+      "id": "sforum.related-discussions.file.backend",
+      "kind": "executable",
+      "path": "backend/plugin"
+    },
+    {
+      "digest": "f4d6b090cfa54bcee5eb8dde5092d03a674302457ae293170ac3ef22bb7861d6",
+      "id": "sforum.related-discussions.file.frontend.related",
+      "kind": "frontend",
+      "path": "frontend/related.mjs",
+      "version": "1"
+    },
+    {
+      "digest": "da3fb70c0831411c6d0df5be464fb51b03420674696ef73d3e01eea3a3c871f9",
+      "id": "sforum.related-discussions.file.openapi",
+      "kind": "openapi",
+      "path": "openapi/routes.yaml"
+    },
+    {
+      "digest": "ca26f5ad66e6b1b54e3ad07a87fa731413d4301242cf49e9f3083225b3e0d740",
+      "id": "sforum.related-discussions.route.related.response",
+      "kind": "schema",
+      "path": "schemas/related-response.json",
+      "version": "1"
+    },
+    {
+      "digest": "09eda09e5b1c4dd6a610976a17c478743064fa956a6b8d972f08a1d35ea07510",
+      "id": "sforum.related-discussions.component.related.props",
+      "kind": "schema",
+      "path": "schemas/related-props.json",
+      "version": "1"
+    },
+    {
+      "digest": "b76019ac153c450130b52b13bbf890b72f90258398182ed77f47448f16a935b0",
+      "id": "sforum.related-discussions.hook.topic.input",
+      "kind": "schema",
+      "path": "schemas/hook-topic.input.json",
+      "version": "1"
+    },
+    {
+      "digest": "7443b9c754fd375b6918948a7efe96122f037e8c516ccd9c880c5f2318bf2142",
+      "id": "sforum.related-discussions.hook.topic-deleted.input",
+      "kind": "schema",
+      "path": "schemas/hook-topic-deleted.input.json",
+      "version": "1"
+    },
+    {
+      "digest": "92c69c226b9b135d2b7d881825a0454b9044c844a44aa5146d3c692caf151ae7",
+      "id": "sforum.related-discussions.job.payload",
+      "kind": "schema",
+      "path": "schemas/job-payload.json",
+      "version": "1"
+    }
+  ],
+  "permissionDefinitions": [
+    {
+      "assignmentPolicy": "host",
+      "contractVersion": "sforum.related-discussions.manage@1",
+      "description": {
+        "en-US": "Tune similarity thresholds, limits, and index rebuild.",
+        "zh-CN": "调整相关性阈值、条数与索引重建。"
+      },
+      "key": "sforum.related-discussions.manage",
+      "label": {
+        "en-US": "Manage related discussions",
+        "zh-CN": "管理相关讨论"
+      },
+      "recommendedRoles": [
+        "administrator"
+      ]
+    }
+  ],
+  "permissions": [
+    "sforum.related-discussions.manage"
+  ],
+  "routes": [
+    {
+      "access": "public",
+      "action": "add",
+      "contractVersion": "sforum.related-discussions.route.related@1",
+      "fallback": "closed",
+      "guard": "core.guard.public",
+      "handler": "sforum.related-discussions.route.related",
+      "id": "sforum.related-discussions.route.related",
+      "methods": [
+        "GET"
+      ],
+      "mode": "http",
+      "path": "/related",
+      "responseSchema": "sforum.related-discussions.route.related.response@1",
+      "timeoutMs": 5000
+    }
+  ],
+  "schedules": [
+    {
+      "contractVersion": "sforum.related-discussions.schedule.reconcile@1",
+      "cron": "30 3 * * *",
+      "id": "sforum.related-discussions.schedule.reconcile",
+      "jobId": "sforum.related-discussions.job.reconcile",
+      "timezone": "UTC"
+    }
+  ],
+  "settings": {
+    "fields": [
+      {
+        "default": "true",
+        "description": {
+          "en-US": "When off, the block disappears from topic pages; the index is kept.",
+          "zh-CN": "关闭后帖子页不再渲染相关讨论，索引仍然保留。"
+        },
+        "group": "general",
+        "groupId": "general",
+        "key": "sforum.related-discussions.enabled",
+        "label": {
+          "en-US": "Enable related discussions",
+          "zh-CN": "启用相关讨论"
+        },
+        "type": "boolean"
+      },
+      {
+        "default": "4",
+        "description": {
+          "en-US": "How many related topics to show under the body, 1–8.",
+          "zh-CN": "正文下方最多显示几条相关帖子，1–8。"
+        },
+        "group": "general",
+        "groupId": "general",
+        "key": "sforum.related-discussions.limit",
+        "label": {
+          "en-US": "Items shown",
+          "zh-CN": "显示条数"
+        },
+        "placeholder": "4",
+        "type": "number"
+      },
+      {
+        "default": "0.15",
+        "description": {
+          "en-US": "0–1. Higher is stricter; 0.15 suits most sites.",
+          "zh-CN": "0–1。越高越严格，0.15 适合大多数站点。"
+        },
+        "group": "general",
+        "groupId": "general",
+        "key": "sforum.related-discussions.min_similarity",
+        "label": {
+          "en-US": "Minimum similarity",
+          "zh-CN": "最低相似度"
+        },
+        "placeholder": "0.15",
+        "type": "number"
+      },
+      {
+        "default": "true",
+        "description": {
+          "en-US": "Restrict candidates to the same category and weight matches higher.",
+          "zh-CN": "候选集只取同分类，并给同分类结果更高权重。"
+        },
+        "group": "general",
+        "groupId": "general",
+        "key": "sforum.related-discussions.include_same_category",
+        "label": {
+          "en-US": "Prefer same category",
+          "zh-CN": "同分类优先"
+        },
+        "type": "boolean"
+      }
+    ],
+    "schemaVersion": 1,
+    "ui": {
+      "callouts": [
+        {
+          "body": {
+            "en-US": "Four items, 0.15 threshold, same category first. Changes apply immediately.",
+            "zh-CN": "4 条、0.15 阈值、同分类优先。改动后立即生效，不需要重启 API。"
+          },
+          "id": "recommended",
+          "link": "",
+          "linkLabel": "",
+          "tab": "general",
+          "title": {
+            "en-US": "Start with the recommended defaults",
+            "zh-CN": "建议先使用推荐默认值"
+          },
+          "tone": "info"
+        }
+      ],
+      "groups": [
+        {
+          "columns": 1,
+          "description": {
+            "en-US": "Relevance uses title similarity and category only; bodies are never read.",
+            "zh-CN": "相关性判定只看标题字面相似度与分类，不读正文。"
+          },
+          "id": "general",
+          "label": {
+            "en-US": "General",
+            "zh-CN": "常规"
+          }
+        }
+      ],
+      "layout": "tabs",
+      "mode": "schema",
+      "tabs": [
+        {
+          "description": "",
+          "groups": [
+            "general"
+          ],
+          "id": "general",
+          "label": {
+            "en-US": "General",
+            "zh-CN": "常规"
+          }
+        }
+      ]
+    }
+  },
+  "sforumVersion": "\u003e=0.1.0",
+  "type": "plugin",
+  "url": "https://github.com/keeptrue/sforum-related-discussions",
+  "version": "1.0.0"
+}

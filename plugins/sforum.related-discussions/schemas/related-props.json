@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Related discussions widget props",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "topicId": { "type": "integer", "minimum": 1 }
+  }
+}
