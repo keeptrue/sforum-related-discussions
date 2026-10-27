@@ -46,6 +46,8 @@ type liveRow struct {
 	Title          string
 	Slug           string
 	CategorySlug   string
+	CategoryName   string
+	CategoryColor  string
 	CommentCount   int64
 	LastActivityAt time.Time
 }
@@ -56,6 +58,8 @@ type relatedItem struct {
 	Title          string `json:"title"`
 	Slug           string `json:"slug"`
 	CategorySlug   string `json:"categorySlug"`
+	CategoryName   string `json:"categoryName"`
+	CategoryColor  string `json:"categoryColor"`
 	CommentCount   int64  `json:"commentCount"`
 	LastActivityAt string `json:"lastActivityAt"`
 }
@@ -401,16 +405,20 @@ func (s *store) liveRows(ctx context.Context, ids []int64) (map[int64]liveRow, e
 			}
 			out[id] = liveRow{
 				TopicID: row.TopicID, Title: row.Title, Slug: row.Slug,
-				CategorySlug: row.CategorySlug, CommentCount: row.CommentCount,
-				LastActivityAt: row.LastActivityAt,
+				CategorySlug: row.CategorySlug, CategoryName: row.CategorySlug,
+				CommentCount: row.CommentCount, LastActivityAt: row.LastActivityAt,
 			}
 		}
 		return out, nil
 	}
 	rows, err := s.db.QueryContext(ctx, `
-SELECT id, title, slug, category_slug, comment_count, last_activity_at
-FROM sforum_core_v1.forum_topics
-WHERE id = ANY($1::bigint[])`, ids)
+SELECT t.id, t.title, t.slug, t.category_slug,
+       coalesce(c.name, '') AS category_name,
+       coalesce(c.icon_color, '') AS category_color,
+       t.comment_count, t.last_activity_at
+FROM sforum_core_v1.forum_topics t
+LEFT JOIN sforum_core_v1.public_categories c ON c.id = t.category_id
+WHERE t.id = ANY($1::bigint[])`, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -418,6 +426,7 @@ WHERE id = ANY($1::bigint[])`, ids)
 	for rows.Next() {
 		var item liveRow
 		if err := rows.Scan(&item.TopicID, &item.Title, &item.Slug, &item.CategorySlug,
+			&item.CategoryName, &item.CategoryColor,
 			&item.CommentCount, &item.LastActivityAt); err != nil {
 			return nil, err
 		}

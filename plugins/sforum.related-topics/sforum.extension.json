@@ -18,7 +18,7 @@
     "url": "https://github.com/keeptrue/sforum"
   },
   "backend": {
-    "digest": "4ef246f82098d3075973bafd4ba2cc9622d5fedd6d2cb67864a5c59422016025",
+    "digest": "cc39b74247ea19a00336e272eb2fc5c53f32ecb77f86d8eb51e5c8ea72f9408b",
     "entry": "backend/plugin",
     "hostApiVersion": "sforum.host@2",
     "protocolVersion": 2,
@@ -31,7 +31,7 @@
   "components": [
     {
       "action": "add",
-      "contractVersion": "sforum.related-topics.component.related@11",
+      "contractVersion": "sforum.related-topics.component.related@12",
       "id": "sforum.related-topics.component.related",
       "l2Component": "sforum.related-topics.file.frontend.related",
       "propsSchema": "sforum.related-topics.component.related.props@1"
@@ -177,7 +177,7 @@
   "openapi": [
     {
       "contractVersion": "sforum.related-topics.openapi.routes@1",
-      "digest": "69111e7d13eb35574499d39c83af4dcf70e6c32f7da5a9b659aaf64bc495e575",
+      "digest": "870bc54bc668b80c5ef36023242c3b8bfc4720b3645ab46bce060fd2abf89a21",
       "id": "sforum.related-topics.openapi.routes",
       "namespace": "sforum.related-topics",
       "path": "openapi/routes.yaml"
@@ -185,26 +185,26 @@
   ],
   "packageFiles": [
     {
-      "digest": "4ef246f82098d3075973bafd4ba2cc9622d5fedd6d2cb67864a5c59422016025",
+      "digest": "cc39b74247ea19a00336e272eb2fc5c53f32ecb77f86d8eb51e5c8ea72f9408b",
       "id": "sforum.related-topics.file.backend",
       "kind": "executable",
       "path": "backend/plugin"
     },
     {
-      "digest": "505e0b689ee67574d895a5c5c5c911c882e055603984e0d4dc07078d82a9a5f1",
+      "digest": "2349f031e03f64d12a17bee201eb5a693f7c97d52bf306a596df0871e80aac03",
       "id": "sforum.related-topics.file.frontend.related",
       "kind": "frontend",
       "path": "frontend/related.mjs",
       "version": "1"
     },
     {
-      "digest": "69111e7d13eb35574499d39c83af4dcf70e6c32f7da5a9b659aaf64bc495e575",
+      "digest": "870bc54bc668b80c5ef36023242c3b8bfc4720b3645ab46bce060fd2abf89a21",
       "id": "sforum.related-topics.file.openapi",
       "kind": "openapi",
       "path": "openapi/routes.yaml"
     },
     {
-      "digest": "ca26f5ad66e6b1b54e3ad07a87fa731413d4301242cf49e9f3083225b3e0d740",
+      "digest": "edfb176321ceaee3ef10d267b9330537cab1c65e69e904f75d1d5cea2abc184d",
       "id": "sforum.related-topics.route.related.response",
       "kind": "schema",
       "path": "schemas/related-response.json",

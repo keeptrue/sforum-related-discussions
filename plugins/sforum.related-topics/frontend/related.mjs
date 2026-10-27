@@ -106,6 +106,12 @@ function relativeTime(iso, locale) {
   }
 }
 
+// normalizeHexColor 只放行 #rrggbb；返回小写形式，便于拼 8 位 alpha 后缀。
+function normalizeHexColor(value) {
+  const raw = String(value || '').trim()
+  return /^#[0-9a-f]{6}$/i.test(raw) ? raw.toLowerCase() : ''
+}
+
 function topicHref(item) {
   const slug = String(item.slug || '').trim()
   return slug ? `/t/${item.topicId}/${slug}` : `/t/${item.topicId}`
@@ -186,10 +192,19 @@ function render(doc, bridge, items) {
 
     const meta = doc.createElement('div')
     meta.className = 'sf-related__meta'
-    if (item.categorySlug) {
+    const categoryLabel = String(item.categoryName || item.categorySlug || '').trim()
+    if (categoryLabel) {
       const badge = doc.createElement('span')
       badge.className = 'sf-related__badge'
-      badge.textContent = String(item.categorySlug)
+      badge.textContent = categoryLabel
+      // 分类色来自 Core 的 public_categories.icon_color；只接受 6 位 hex，
+      // 其它形状（空、rgb()、异常值）一律回落到中性描边，不拼进内联样式。
+      const color = normalizeHexColor(item.categoryColor)
+      if (color) {
+        badge.style.color = color
+        badge.style.borderColor = `${color}59`
+        badge.style.backgroundColor = `${color}14`
+      }
       meta.appendChild(badge)
     }
     const replies = doc.createElement('span')

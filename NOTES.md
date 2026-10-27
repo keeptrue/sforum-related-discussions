@@ -93,3 +93,22 @@ JSON，必须传 `responseMode: 'body'`。即使传了，宿主仍可能按 `tex
 另外：**每次改动 `frontend/related.mjs` 都必须 bump
 `components[].contractVersion`**，否则升级会被拒（`component registry contract
 conflicts with the active snapshot`）。当前是 `@11`。
+
+## 分类名与分类色
+
+`forum_topics` 视图只有 `category_slug`，直接展示会看到 `career` 这种内部标识。
+展示用的名字与颜色来自 `sforum_core_v1.public_categories`（`name` / `icon_color`），
+在 `liveRows` 里按 `category_id` LEFT JOIN 取：
+
+```sql
+SELECT t.id, t.title, t.slug, t.category_slug,
+       coalesce(c.name, '') AS category_name,
+       coalesce(c.icon_color, '') AS category_color,
+       t.comment_count, t.last_activity_at
+FROM sforum_core_v1.forum_topics t
+LEFT JOIN sforum_core_v1.public_categories c ON c.id = t.category_id
+WHERE t.id = ANY($1::bigint[])
+```
+
+`icon_color` 可能是空串（`general` 这类没设色的分类），所以组件只接受
+`^#[0-9a-f]{6}$`，其它形状回落到中性描边——不把未校验的字符串拼进内联样式。
