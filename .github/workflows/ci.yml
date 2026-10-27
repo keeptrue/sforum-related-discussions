@@ -114,6 +114,10 @@ jobs:
         working-directory: sforum/apps/api
         run: go run ./cmd/sforum extension validate "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
 
+      - name: Brand asset check
+        working-directory: sforum/apps/api
+        run: go run ./cmd/sforum extension brand check "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
+
       - name: Host contract test
         working-directory: sforum/apps/api
         run: go run ./cmd/sforum extension test "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"

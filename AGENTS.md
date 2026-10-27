@@ -9,7 +9,7 @@ SForum 的「相关讨论」插件。独立仓库，仓库根即外部扩展源�
 ## 命令
 
 ```bash
-scripts/prepare-package.sh            # build → digest --write → validate → test
+scripts/prepare-package.sh            # build → digest --write → validate → brand check → test
 cd plugins/sforum.related-topics/backend && go test ./...
 ```
 

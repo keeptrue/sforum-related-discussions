@@ -86,6 +86,7 @@ jobs:
           cd sforum/apps/api
           go run ./cmd/sforum extension digest --write "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
           go run ./cmd/sforum extension validate "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
+          go run ./cmd/sforum extension brand check "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
           go run ./cmd/sforum extension test "$GITHUB_WORKSPACE/plugin/$PACKAGE_DIR"
 
   build:

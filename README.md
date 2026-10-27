@@ -3,6 +3,8 @@
 [![ci](https://github.com/keeptrue/sforum-related-discussions/actions/workflows/ci.yml/badge.svg)](https://github.com/keeptrue/sforum-related-discussions/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/keeptrue/sforum-related-discussions)](https://github.com/keeptrue/sforum-related-discussions/releases)
 
+![相关讨论 社交卡](./plugins/sforum.related-topics/brand/social-preview.png)
+
 在帖子详情页正文下方、评论区之前，列出与该帖内容相关的其他帖子。读者读完正文正好看到「这个话题还聊过什么」，把被埋没的旧帖重新带回流量。
 
 外部扩展包，不属于 SForum 内置插件。
@@ -86,7 +88,7 @@
 scripts/prepare-package.sh
 ```
 
-它会依次执行 `go build`（`CGO_ENABLED=0 -trimpath -buildvcs=false`，与宿主 dev 构建同参）→ `extension digest --write` → `extension validate` → `extension test`。
+它会依次执行 `go build`（`CGO_ENABLED=0 -trimpath -buildvcs=false`，与宿主 dev 构建同参）→ `extension digest --write` → `extension validate` → `extension brand check` → `extension test`。
 
 ## 发布
 

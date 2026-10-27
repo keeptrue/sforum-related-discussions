@@ -26,6 +26,11 @@ echo "==> 刷新包摘要（extension digest --write）"
 echo "==> 校验清单（extension validate）"
 (cd "$SFORUM_DIR/apps/api" && go run ./cmd/sforum extension validate "$PKG")
 
+echo "==> 品牌资产（extension brand check）"
+# 品牌不是运行时制品、也不进 packageFiles，但它随包树摘要变化，
+# 所以同样在门禁里校验：icon.svg 的 viewBox、PNG 尺寸与字节上限。
+(cd "$SFORUM_DIR/apps/api" && go run ./cmd/sforum extension brand check "$PKG")
+
 echo "==> 宿主契约检查（extension test）"
 (cd "$SFORUM_DIR/apps/api" && go run ./cmd/sforum extension test "$PKG")
 
