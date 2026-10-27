@@ -86,6 +86,8 @@ func (s *store) runBackfill(ctx context.Context, report func(processed int64)) e
 			break
 		}
 	}
+	// 回填改变了候选池，缓存里的旧候选（尤其是空列表）必须作废。
+	_, _ = s.db.ExecContext(ctx, `DELETE FROM related_cache`)
 	return nil
 }
 

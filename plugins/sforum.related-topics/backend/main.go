@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"log"
+	"time"
 
 	pluginv2 "github.com/keeptrue/sforum/apps/api/sdk/plugin/v2"
 )
@@ -24,6 +26,18 @@ func main() {
 
 func newRelatedServer() (*relatedServer, error) {
 	server := &relatedServer{store: newStore(), config: loadConfig()}
+
+	// 启动即回填一次：索引是派生数据，重启后重扫一遍是幂等的，代价是
+	// 每 500 条一次 upsert。放在 goroutine 里，不阻塞插件握手。
+	if server.store.connected() {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			if err := server.store.runBackfill(ctx, nil); err != nil {
+				log.Printf("related discussions: startup backfill failed: %v", err)
+			}
+		}()
+	}
 
 	// 三条 observe hook 共用同一套快照结构；失败策略 fail_open，
 	// 索引写不进去不能反过来挡住发帖。
@@ -77,5 +91,8 @@ func newRelatedServer() (*relatedServer, error) {
 	server.Server = pluginv2.NewServer().
 		WithHookRegistry(hooks).
 		WithJobRegistry(jobs)
+	// 生命周期走 RuntimeStreams；本插件所有步骤都是幂等 no-op，
+	// 但声明 V2 是 dev watcher 能自动升级新摘要的前提。
+	server.WithRuntimeStreams(pluginv2.RuntimeStreams{Lifecycle: runLifecycle})
 	return server, nil
 }

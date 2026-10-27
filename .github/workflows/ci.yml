@@ -21,7 +21,7 @@ env:
   # 本插件用到的宿主面（hooks / jobs / schedules / routes / own_schema + core_views /
   # 公开 L2 组件 / forum.page.regions l2Widget）都已合入宿主 main。
   SFORUM_REF: main
-  PACKAGE_DIR: plugins/sforum.related-discussions
+  PACKAGE_DIR: plugins/sforum.related-topics
 
 jobs:
   verify:

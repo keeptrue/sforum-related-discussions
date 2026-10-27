@@ -18,7 +18,7 @@
     "url": "https://github.com/keeptrue/sforum"
   },
   "backend": {
-    "digest": "44ee0b276d5cfddaeaf2992e7360ba81a7df03194e9bdcdbf6f1ea3c2ba0bd59",
+    "digest": "4ef246f82098d3075973bafd4ba2cc9622d5fedd6d2cb67864a5c59422016025",
     "entry": "backend/plugin",
     "hostApiVersion": "sforum.host@2",
     "protocolVersion": 2,
@@ -31,22 +31,22 @@
   "components": [
     {
       "action": "add",
-      "contractVersion": "sforum.related-discussions.component.related@1",
-      "id": "sforum.related-discussions.component.related",
-      "l2Component": "sforum.related-discussions.file.frontend.related",
-      "propsSchema": "sforum.related-discussions.component.related.props@1"
+      "contractVersion": "sforum.related-topics.component.related@1",
+      "id": "sforum.related-topics.component.related",
+      "l2Component": "sforum.related-topics.file.frontend.related",
+      "propsSchema": "sforum.related-topics.component.related.props@1"
     }
   ],
   "contributions": [
     {
-      "id": "sforum.related-discussions.region.topic",
+      "id": "sforum.related-topics.region.topic",
       "label": {
         "en-US": "Related discussions",
         "zh-CN": "相关讨论"
       },
       "order": 10,
       "payload": {
-        "componentId": "sforum.related-discussions.component.related",
+        "componentId": "sforum.related-topics.component.related",
         "pages": [
           "forum.topic.show"
         ],
@@ -61,7 +61,7 @@
       "required": true,
       "strategy": "pg_dump"
     },
-    "contractVersion": "sforum.related-discussions.database@1",
+    "contractVersion": "sforum.related-topics.database@1",
     "grants": [
       "own_schema",
       "core_views"
@@ -77,124 +77,163 @@
   "description": "帖子页正文下方的相关讨论：把被埋没的旧帖重新带回流量。",
   "hooks": [
     {
-      "contractVersion": "sforum.related-discussions.hook.topic-created@1",
+      "contractVersion": "sforum.related-topics.hook.topic-created@1",
       "execution": "async",
       "failurePolicy": "fail_open",
-      "handler": "sforum.related-discussions.hook.topic-created",
-      "id": "sforum.related-discussions.hook.topic-created",
-      "inputSchema": "sforum.related-discussions.hook.topic.input@1",
+      "handler": "sforum.related-topics.hook.topic-created",
+      "id": "sforum.related-topics.hook.topic-created",
+      "inputSchema": "sforum.related-topics.hook.topic.input@1",
       "kind": "observe",
       "name": "topic.created",
       "timeoutMs": 5000
     },
     {
-      "contractVersion": "sforum.related-discussions.hook.topic-updated@1",
+      "contractVersion": "sforum.related-topics.hook.topic-updated@1",
       "execution": "async",
       "failurePolicy": "fail_open",
-      "handler": "sforum.related-discussions.hook.topic-updated",
-      "id": "sforum.related-discussions.hook.topic-updated",
-      "inputSchema": "sforum.related-discussions.hook.topic.input@1",
+      "handler": "sforum.related-topics.hook.topic-updated",
+      "id": "sforum.related-topics.hook.topic-updated",
+      "inputSchema": "sforum.related-topics.hook.topic.input@1",
       "kind": "observe",
       "name": "topic.updated",
       "timeoutMs": 5000
     },
     {
-      "contractVersion": "sforum.related-discussions.hook.topic-deleted@1",
+      "contractVersion": "sforum.related-topics.hook.topic-deleted@1",
       "execution": "async",
       "failurePolicy": "fail_open",
-      "handler": "sforum.related-discussions.hook.topic-deleted",
-      "id": "sforum.related-discussions.hook.topic-deleted",
-      "inputSchema": "sforum.related-discussions.hook.topic-deleted.input@1",
+      "handler": "sforum.related-topics.hook.topic-deleted",
+      "id": "sforum.related-topics.hook.topic-deleted",
+      "inputSchema": "sforum.related-topics.hook.topic-deleted.input@1",
       "kind": "observe",
       "name": "topic.deleted",
       "timeoutMs": 5000
     }
   ],
-  "id": "sforum.related-discussions",
+  "id": "sforum.related-topics",
   "jobs": [
     {
       "concurrencyLimit": 1,
-      "contractVersion": "sforum.related-discussions.job.backfill@1",
-      "handler": "sforum.related-discussions.job.backfill",
-      "id": "sforum.related-discussions.job.backfill",
+      "contractVersion": "sforum.related-topics.job.backfill@1",
+      "handler": "sforum.related-topics.job.backfill",
+      "id": "sforum.related-topics.job.backfill",
       "maxAttempts": 3,
-      "name": "sforum.related-discussions.backfill",
-      "payloadSchema": "sforum.related-discussions.job.payload@1",
+      "name": "sforum.related-topics.backfill",
+      "payloadSchema": "sforum.related-topics.job.payload@1",
       "retryPolicy": "exponential"
     },
     {
       "concurrencyLimit": 1,
-      "contractVersion": "sforum.related-discussions.job.reconcile@1",
-      "handler": "sforum.related-discussions.job.reconcile",
-      "id": "sforum.related-discussions.job.reconcile",
+      "contractVersion": "sforum.related-topics.job.reconcile@1",
+      "handler": "sforum.related-topics.job.reconcile",
+      "id": "sforum.related-topics.job.reconcile",
       "maxAttempts": 3,
-      "name": "sforum.related-discussions.reconcile",
-      "payloadSchema": "sforum.related-discussions.job.payload@1",
+      "name": "sforum.related-topics.reconcile",
+      "payloadSchema": "sforum.related-topics.job.payload@1",
       "retryPolicy": "exponential"
     }
   ],
+  "lifecycle": {
+    "contractVersion": "sforum.related-topics.lifecycle@1",
+    "disable": {
+      "checkpointSchema": "sforum.related-topics.lifecycle.checkpoint@1",
+      "execute": "sforum.related-topics.lifecycle.disable.execute",
+      "plan": "sforum.related-topics.lifecycle.disable.plan",
+      "progressSchema": "sforum.related-topics.lifecycle.progress@1"
+    },
+    "enable": {
+      "checkpointSchema": "sforum.related-topics.lifecycle.checkpoint@1",
+      "execute": "sforum.related-topics.lifecycle.enable.execute",
+      "plan": "sforum.related-topics.lifecycle.enable.plan",
+      "progressSchema": "sforum.related-topics.lifecycle.progress@1"
+    },
+    "install": {
+      "checkpointSchema": "sforum.related-topics.lifecycle.checkpoint@1",
+      "execute": "sforum.related-topics.lifecycle.install.execute",
+      "plan": "sforum.related-topics.lifecycle.install.plan",
+      "progressSchema": "sforum.related-topics.lifecycle.progress@1"
+    },
+    "rollback": {
+      "checkpointSchema": "sforum.related-topics.lifecycle.checkpoint@1",
+      "execute": "sforum.related-topics.lifecycle.rollback.execute",
+      "plan": "sforum.related-topics.lifecycle.rollback.plan",
+      "progressSchema": "sforum.related-topics.lifecycle.progress@1"
+    },
+    "uninstall": {
+      "checkpointSchema": "sforum.related-topics.lifecycle.checkpoint@1",
+      "execute": "sforum.related-topics.lifecycle.uninstall.execute",
+      "plan": "sforum.related-topics.lifecycle.uninstall.plan",
+      "progressSchema": "sforum.related-topics.lifecycle.progress@1"
+    },
+    "upgrade": {
+      "checkpointSchema": "sforum.related-topics.lifecycle.checkpoint@1",
+      "execute": "sforum.related-topics.lifecycle.upgrade.execute",
+      "plan": "sforum.related-topics.lifecycle.upgrade.plan",
+      "progressSchema": "sforum.related-topics.lifecycle.progress@1"
+    }
+  },
   "manifestVersion": 3,
   "name": "SForum Related Discussions",
   "openapi": [
     {
-      "contractVersion": "sforum.related-discussions.openapi.routes@1",
-      "digest": "da3fb70c0831411c6d0df5be464fb51b03420674696ef73d3e01eea3a3c871f9",
-      "id": "sforum.related-discussions.openapi.routes",
-      "namespace": "sforum.related-discussions",
+      "contractVersion": "sforum.related-topics.openapi.routes@1",
+      "digest": "69111e7d13eb35574499d39c83af4dcf70e6c32f7da5a9b659aaf64bc495e575",
+      "id": "sforum.related-topics.openapi.routes",
+      "namespace": "sforum.related-topics",
       "path": "openapi/routes.yaml"
     }
   ],
   "packageFiles": [
     {
-      "digest": "44ee0b276d5cfddaeaf2992e7360ba81a7df03194e9bdcdbf6f1ea3c2ba0bd59",
-      "id": "sforum.related-discussions.file.backend",
+      "digest": "4ef246f82098d3075973bafd4ba2cc9622d5fedd6d2cb67864a5c59422016025",
+      "id": "sforum.related-topics.file.backend",
       "kind": "executable",
       "path": "backend/plugin"
     },
     {
       "digest": "f4d6b090cfa54bcee5eb8dde5092d03a674302457ae293170ac3ef22bb7861d6",
-      "id": "sforum.related-discussions.file.frontend.related",
+      "id": "sforum.related-topics.file.frontend.related",
       "kind": "frontend",
       "path": "frontend/related.mjs",
       "version": "1"
     },
     {
-      "digest": "da3fb70c0831411c6d0df5be464fb51b03420674696ef73d3e01eea3a3c871f9",
-      "id": "sforum.related-discussions.file.openapi",
+      "digest": "69111e7d13eb35574499d39c83af4dcf70e6c32f7da5a9b659aaf64bc495e575",
+      "id": "sforum.related-topics.file.openapi",
       "kind": "openapi",
       "path": "openapi/routes.yaml"
     },
     {
       "digest": "ca26f5ad66e6b1b54e3ad07a87fa731413d4301242cf49e9f3083225b3e0d740",
-      "id": "sforum.related-discussions.route.related.response",
+      "id": "sforum.related-topics.route.related.response",
       "kind": "schema",
       "path": "schemas/related-response.json",
       "version": "1"
     },
     {
       "digest": "09eda09e5b1c4dd6a610976a17c478743064fa956a6b8d972f08a1d35ea07510",
-      "id": "sforum.related-discussions.component.related.props",
+      "id": "sforum.related-topics.component.related.props",
       "kind": "schema",
       "path": "schemas/related-props.json",
       "version": "1"
     },
     {
       "digest": "b76019ac153c450130b52b13bbf890b72f90258398182ed77f47448f16a935b0",
-      "id": "sforum.related-discussions.hook.topic.input",
+      "id": "sforum.related-topics.hook.topic.input",
       "kind": "schema",
       "path": "schemas/hook-topic.input.json",
       "version": "1"
     },
     {
       "digest": "7443b9c754fd375b6918948a7efe96122f037e8c516ccd9c880c5f2318bf2142",
-      "id": "sforum.related-discussions.hook.topic-deleted.input",
+      "id": "sforum.related-topics.hook.topic-deleted.input",
       "kind": "schema",
       "path": "schemas/hook-topic-deleted.input.json",
       "version": "1"
     },
     {
       "digest": "92c69c226b9b135d2b7d881825a0454b9044c844a44aa5146d3c692caf151ae7",
-      "id": "sforum.related-discussions.job.payload",
+      "id": "sforum.related-topics.job.payload",
       "kind": "schema",
       "path": "schemas/job-payload.json",
       "version": "1"
@@ -203,12 +242,12 @@
   "permissionDefinitions": [
     {
       "assignmentPolicy": "host",
-      "contractVersion": "sforum.related-discussions.manage@1",
+      "contractVersion": "sforum.related-topics.manage@1",
       "description": {
         "en-US": "Tune similarity thresholds, limits, and index rebuild.",
         "zh-CN": "调整相关性阈值、条数与索引重建。"
       },
-      "key": "sforum.related-discussions.manage",
+      "key": "sforum.related-topics.manage",
       "label": {
         "en-US": "Manage related discussions",
         "zh-CN": "管理相关讨论"
@@ -219,32 +258,32 @@
     }
   ],
   "permissions": [
-    "sforum.related-discussions.manage"
+    "sforum.related-topics.manage"
   ],
   "routes": [
     {
       "access": "public",
       "action": "add",
-      "contractVersion": "sforum.related-discussions.route.related@1",
+      "contractVersion": "sforum.related-topics.route.related@1",
       "fallback": "closed",
       "guard": "core.guard.public",
-      "handler": "sforum.related-discussions.route.related",
-      "id": "sforum.related-discussions.route.related",
+      "handler": "sforum.related-topics.route.related",
+      "id": "sforum.related-topics.route.related",
       "methods": [
         "GET"
       ],
       "mode": "http",
       "path": "/related",
-      "responseSchema": "sforum.related-discussions.route.related.response@1",
+      "responseSchema": "sforum.related-topics.route.related.response@1",
       "timeoutMs": 5000
     }
   ],
   "schedules": [
     {
-      "contractVersion": "sforum.related-discussions.schedule.reconcile@1",
+      "contractVersion": "sforum.related-topics.schedule.reconcile@1",
       "cron": "30 3 * * *",
-      "id": "sforum.related-discussions.schedule.reconcile",
-      "jobId": "sforum.related-discussions.job.reconcile",
+      "id": "sforum.related-topics.schedule.reconcile",
+      "jobId": "sforum.related-topics.job.reconcile",
       "timezone": "UTC"
     }
   ],
@@ -258,7 +297,7 @@
         },
         "group": "general",
         "groupId": "general",
-        "key": "sforum.related-discussions.enabled",
+        "key": "sforum.related-topics.enabled",
         "label": {
           "en-US": "Enable related discussions",
           "zh-CN": "启用相关讨论"
@@ -273,7 +312,7 @@
         },
         "group": "general",
         "groupId": "general",
-        "key": "sforum.related-discussions.limit",
+        "key": "sforum.related-topics.limit",
         "label": {
           "en-US": "Items shown",
           "zh-CN": "显示条数"
@@ -289,7 +328,7 @@
         },
         "group": "general",
         "groupId": "general",
-        "key": "sforum.related-discussions.min_similarity",
+        "key": "sforum.related-topics.min_similarity",
         "label": {
           "en-US": "Minimum similarity",
           "zh-CN": "最低相似度"
@@ -305,7 +344,7 @@
         },
         "group": "general",
         "groupId": "general",
-        "key": "sforum.related-discussions.include_same_category",
+        "key": "sforum.related-topics.include_same_category",
         "label": {
           "en-US": "Prefer same category",
           "zh-CN": "同分类优先"
@@ -363,8 +402,8 @@
       ]
     }
   },
-  "sforumVersion": "\u003e=0.1.0",
+  "sforumVersion": ">=0.1.0",
   "type": "plugin",
   "url": "https://github.com/keeptrue/sforum-related-discussions",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

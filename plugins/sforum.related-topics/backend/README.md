@@ -1,6 +1,6 @@
 # Backend Stub
 
-Build a HashiCorp go-plugin compatible executable named `plugin` in this directory before enabling `sforum.related-discussions`.
+Build a HashiCorp go-plugin compatible executable named `plugin` in this directory before enabling `sforum.related-topics`.
 
 Use the Protocol V2 public Go SDK:
 

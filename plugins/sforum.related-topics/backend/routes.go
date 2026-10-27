@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"sort"
@@ -24,8 +26,16 @@ const (
 	recencyHalfLife = 180.0
 )
 
-func (s *relatedServer) InvokeRoute(callCtx context.Context, request *pluginwire.RouteRequest) (*pluginwire.RouteResponse, error) {
+func (s *relatedServer) InvokeRoute(callCtx context.Context, request *pluginwire.RouteRequest) (response *pluginwire.RouteResponse, err error) {
 	ctx := request.GetContext()
+	// panic 在插件里等于整条路由不可用；转成带原因的失败并留一行日志，
+	// 比让宿主只报「runtime failed」有用得多。
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			log.Printf("related discussions: route panic: %v", recovered)
+			response, err = nil, fmt.Errorf("related discussions: route panic: %v", recovered)
+		}
+	}()
 	switch request.GetRouteId() {
 	case routeRelatedID:
 		return s.handleRelated(callCtx, request)
@@ -59,8 +69,15 @@ func (s *relatedServer) handleRelated(callCtx context.Context, request *pluginwi
 		return s.respondRelated(ctx, nil, false)
 	}
 
+	// 索引为空时顺手排一次回填，本次仍然返回空。判据必须在 ensureIndexed
+	// 之前取：后者会先把源帖子自己写进索引，让「空索引」永远不成立。
+	if total, countErr := s.store.indexCount(callCtx); countErr == nil && total == 0 {
+		s.enqueueBackfill(callCtx, ctx)
+	}
+
 	source, ok, err := s.store.ensureIndexed(callCtx, topicID)
 	if err != nil {
+		log.Printf("related discussions: index lookup failed: %v", err)
 		return routeUnavailable(ctx, "related.index_unavailable", "index lookup failed"), nil
 	}
 	if !ok {
@@ -68,13 +85,9 @@ func (s *relatedServer) handleRelated(callCtx context.Context, request *pluginwi
 		return s.respondRelated(ctx, nil, false)
 	}
 
-	// 索引为空时顺手排一次回填，本次仍然返回空。
-	if total, countErr := s.store.indexCount(callCtx); countErr == nil && total == 0 {
-		s.enqueueBackfill(callCtx, ctx)
-	}
-
 	candidates, cached, err := s.store.candidatesFor(callCtx, source, cfg.IncludeSameCategory)
 	if err != nil {
+		log.Printf("related discussions: candidate query failed: %v", err)
 		return routeUnavailable(ctx, "related.candidates_unavailable", "candidate query failed"), nil
 	}
 	if len(candidates) == 0 {
@@ -87,6 +100,7 @@ func (s *relatedServer) handleRelated(callCtx context.Context, request *pluginwi
 	}
 	live, err := s.store.liveRows(callCtx, ids)
 	if err != nil {
+		log.Printf("related discussions: core view lookup failed: %v", err)
 		return routeUnavailable(ctx, "related.live_rows_unavailable", "core view lookup failed"), nil
 	}
 
@@ -167,6 +181,7 @@ func (s *relatedServer) respondRelated(ctx *protocolwire.RequestContext, items [
 		"cached": cached,
 	})
 	if err != nil {
+		log.Printf("related discussions: response document failed: %v", err)
 		return nil, err
 	}
 	return &pluginwire.RouteResponse{

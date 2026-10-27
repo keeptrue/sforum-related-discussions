@@ -47,7 +47,7 @@
 `brand check` 只读包内 `brand/` 三个文件，不读生成器的 `spec.json`；`extension test`
 与宿主 dev 构建都不查 brand。v1 是本地运行包，不走发布流程，所以不做。
 真要发布时：在宿主 `scripts/brand/spec.json` 加一条 `external` 记录，
-再 `node scripts/brand/generate.mjs --only sforum.related-discussions`。
+再 `node scripts/brand/generate.mjs --only sforum.related-topics`。
 
 ## 缓存
 

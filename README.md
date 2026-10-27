@@ -1,4 +1,4 @@
-# SForum 相关讨论（`sforum.related-discussions`）
+# SForum 相关讨论（`sforum.related-topics`）
 
 在帖子详情页正文下方、评论区之前，列出与该帖内容相关的其他帖子。读者读完正文正好看到「这个话题还聊过什么」，把被埋没的旧帖重新带回流量。
 
@@ -6,7 +6,7 @@
 
 - 仓库：`~/Code/github/sforum-related-discussions`（仓库根即 SForum 的外部扩展源根）
 - 框架检出：`~/Code/github/SForum`（**同级目录**，插件通过本地 `replace` 解析宿主 SDK）
-- 扩展 id：`sforum.related-discussions`
+- 扩展 id：`sforum.related-topics`
 
 ## 它解决什么问题
 
@@ -74,7 +74,7 @@ scripts/prepare-package.sh
 ## 目录布局
 
 ```text
-plugins/sforum.related-discussions/
+plugins/sforum.related-topics/
 ├── sforum.extension.json
 ├── frontend/related.mjs        # 帖子页正文下方的 L2 列表组件
 ├── openapi/routes.yaml         # GET /related

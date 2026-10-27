@@ -295,7 +295,7 @@ func (s *store) candidatesFor(ctx context.Context, source indexRow, sameCategory
 	}
 	rows, err := s.db.QueryContext(ctx, `
 SELECT topic_id, sim FROM (
-  SELECT topic_id, similarity(lower(title), lower($2)) AS sim
+  SELECT topic_id, sforum_host_extensions.similarity(lower(title), lower($2)) AS sim
   FROM related_index
   WHERE topic_id <> $1
     AND status = 'active'

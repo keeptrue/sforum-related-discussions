@@ -3,14 +3,14 @@
 SForum 的「相关讨论」插件。独立仓库，仓库根即外部扩展源根。
 
 - 宿主检出：`~/Code/github/SForum`（同级目录；后端通过 `replace` 解析宿主 SDK）
-- 扩展包：`plugins/sforum.related-discussions/`
-- 扩展 id：`sforum.related-discussions`
+- 扩展包：`plugins/sforum.related-topics/`
+- 扩展 id：`sforum.related-topics`
 
 ## 命令
 
 ```bash
 scripts/prepare-package.sh            # build → digest --write → validate → test
-cd plugins/sforum.related-discussions/backend && go test ./...
+cd plugins/sforum.related-topics/backend && go test ./...
 ```
 
 宿主 `EXTERNAL_EXTENSION_ROOTS` 已包含本仓库根，保存源文件后 dev watcher 会自动
@@ -35,6 +35,6 @@ cd plugins/sforum.related-discussions/backend && go test ./...
 ## 调试
 
 - 插件子进程的 stderr 进宿主日志。
-- 路由：`curl 'http://127.0.0.1:8080/api/v1/extensions/sforum.related-discussions/related?topicId=1'`
+- 路由：`curl 'http://127.0.0.1:8080/api/v1/extensions/sforum.related-topics/related?topicId=1'`
   （需要 `X-SForum-Extension-Id` 等公开 L2 头时，直接从帖子页的 Network 抄）。
 - 索引排查：`SELECT count(*) FROM sforum_related_discussions.related_index;`

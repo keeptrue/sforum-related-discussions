@@ -1,9 +1,9 @@
 # 构建产物：插件可执行文件按平台在本地产出，不入库（发布时由 CI 交叉编译并写入摘要）。
 # 路径写成「仓库根起的完整相对路径」，锚定到具体包目录。
-/plugins/sforum.related-discussions/backend/plugin
-/plugins/sforum.related-discussions/backend/plugin.exe
+/plugins/sforum.related-topics/backend/plugin
+/plugins/sforum.related-topics/backend/plugin.exe
 # `go build ./...` 会把 main 包编译成与目录同名的二进制，留在包里。
-/plugins/sforum.related-discussions/backend/backend
+/plugins/sforum.related-topics/backend/backend
 /.build/
 /dist/
 

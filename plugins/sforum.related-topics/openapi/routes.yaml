@@ -5,11 +5,11 @@ info:
 paths:
   /related:
     get:
-      operationId: sforum.related-discussions.list
-      x-sforum-route-id: sforum.related-discussions.route.related
-      x-sforum-contract-version: sforum.related-discussions.route.related@1
+      operationId: sforum.related-topics.list
+      x-sforum-route-id: sforum.related-topics.route.related
+      x-sforum-contract-version: sforum.related-topics.route.related@1
       x-sforum-guard: core.guard.public
-      x-sforum-response-schema: sforum.related-discussions.route.related.response@1
+      x-sforum-response-schema: sforum.related-topics.route.related.response@1
       summary: List related discussions for one topic
       parameters:
         - name: topicId
@@ -24,14 +24,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/sforum.related-discussions.route.related.response@1"
+                $ref: "#/components/schemas/sforum.related-topics.route.related.response@1"
         "422":
           description: topicId missing or not a positive integer
         "503":
           description: Index or Core view temporarily unavailable
 components:
   schemas:
-    "sforum.related-discussions.route.related.response@1":
+    "sforum.related-topics.route.related.response@1":
       type: object
       required:
         - items

@@ -151,7 +151,7 @@ func TestLoadConfigFallsBackOnGarbage(t *testing.T) {
 
 func TestSettingEnvMatchesHostDerivation(t *testing.T) {
 	got := settingEnv(settingLimit)
-	want := "SFORUM_SETTING_SFORUM_RELATED_DISCUSSIONS_LIMIT"
+	want := "SFORUM_SETTING_SFORUM_RELATED_TOPICS_LIMIT"
 	if got != want {
 		t.Fatalf("setting env drift: got %q want %q", got, want)
 	}
