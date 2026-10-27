@@ -57,9 +57,13 @@ function ensureStyle(doc) {
   font-size: 12px; opacity: .62;
 }
 .sf-related__badge {
-  border: 1px solid rgba(127,127,127,.32); border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid rgba(127,127,127,.2); border-radius: 999px;
   padding: 1px 8px; font-size: 11px; line-height: 1.6;
+  background: rgba(127,127,127,.06);
 }
+/* 分类色只做一个小圆点：整块染成分类色会让黄/绿分类在白底上刺眼。 */
+.sf-related__dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
 @media (max-width: 640px) {
   .sf-related__link { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 }
@@ -196,15 +200,13 @@ function render(doc, bridge, items) {
     if (categoryLabel) {
       const badge = doc.createElement('span')
       badge.className = 'sf-related__badge'
-      badge.textContent = categoryLabel
       // 分类色来自 Core 的 public_categories.icon_color；只接受 6 位 hex，
-      // 其它形状（空、rgb()、异常值）一律回落到中性描边，不拼进内联样式。
-      const color = normalizeHexColor(item.categoryColor)
-      if (color) {
-        badge.style.color = color
-        badge.style.borderColor = `${color}59`
-        badge.style.backgroundColor = `${color}14`
-      }
+      // 其它形状（空、rgb()、异常值）回落到中性灰点，不拼进内联样式。
+      const dot = doc.createElement('span')
+      dot.className = 'sf-related__dot'
+      dot.style.backgroundColor = normalizeHexColor(item.categoryColor) || 'rgba(127,127,127,.45)'
+      badge.appendChild(dot)
+      badge.appendChild(doc.createTextNode(categoryLabel))
       meta.appendChild(badge)
     }
     const replies = doc.createElement('span')
